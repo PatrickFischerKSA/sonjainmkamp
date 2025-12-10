@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Capricorn – Think-Backwards-Prototyp</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+    }
+    .app {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #9ca3af;
+      margin-bottom: 20px;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 2fr 1.5fr;
+      gap: 20px;
+    }
+    @media (max-width: 800px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+    .panel {
+      background: #020617;
+      border-radius: 12px;
+      padding: 16px 18px;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.5);
+      border: 1px solid #1e293b;
+    }
+    .panel h2 {
+      margin-top: 0;
+      font-size: 1.1rem;
+    }
+    .scene-title {
+      font-weight: 600;
+      margin-bottom: 6px;
+      font-size: 1rem;
+      color: #e5e7eb;
+    }
+    .scene-intro {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: #d1d5db;
+      white-space: pre-wrap;
+    }
+    .clue-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+    .clue-button {
+      width: 100%;
+      text-align: left;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #1e293b;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .clue-button:hover {
+      background: #0f172a;
+      border-color: #3b82f6;
+    }
+    .clue-detail-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #e5e7eb;
+    }
+    .clue-detail-text {
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: #d1d5db;
+      white-space: pre-wrap;
+    }
+    .controls {
+      margin-top: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .btn {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid #1e293b;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.05s;
+    }
+    .btn.primary {
+      background: #3b82f6;
+      border-color: #2563eb;
+      color: #f9fafb;
+      font-weight: 500;
+    }
+    .btn:hover {
+      background: #111827;
+      border-color: #3b82f6;
+      transform: translateY(-1px);
+    }
+    .btn.primary:hover {
+      background: #2563eb;
+    }
+    .question {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: #9ca3af;
+    }
+    .answer-box {
+      margin-top: 8px;
+      width: 100%;
+      min-height: 70px;
+      border-radius: 8px;
+      border: 1px solid #1f2933;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 0.9rem;
+      padding: 8px 10px;
+      resize: vertical;
+      font-family: inherit;
+    }
+    .log {
+      margin-top: 10px;
+      font-size: 0.86rem;
+      color: #9ca3af;
+      max-height: 140px;
+      overflow-y: auto;
+      border-top: 1px dashed #1f2933;
+      padding-top: 6px;
+    }
+    .log-entry {
+      margin-bottom: 4px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #374151;
+      font-size: 0.7rem;
+      color: #9ca3af;
+      background: rgba(15,23,42,0.7);
+    }
+    .keyword-hint {
+      margin-top: 6px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+    }
+    .end-highlight {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #022c22;
+      border: 1px solid #064e3b;
+      font-size: 0.9rem;
+      color: #bbf7d0;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>CAPRICORN</h1>
+    <div class="subtitle">
+      Ein kleiner Think-Backwards-Prototyp im Browser – du kannst nichts verändern, nur rekonstruieren.
+    </div>
+
+    <div class="layout">
+      <!-- Linke Seite: Szene -->
+      <div class="panel">
+        <div class="scene-title" id="scene-title"></div>
+        <div class="scene-intro" id="scene-intro"></div>
+
+        <div class="question" id="scene-question"></div>
+
+        <textarea id="answer-input" class="answer-box"
+                  placeholder="Schreibe hier deine Erklärung für diese Szene..."></textarea>
+
+        <div class="controls">
+          <button class="btn primary" id="check-answer-btn">Lösung prüfen</button>
+          <button class="btn" id="help-btn">Hilfe</button>
+          <span class="badge" id="attempts-badge">Versuche: 0</span>
+        </div>
+
+        <div class="log" id="log"></div>
+      </div>
+
+      <!-- Rechte Seite: Hinweise -->
+      <div class="panel">
+        <h2>Hinweise in dieser Szene</h2>
+        <ul class="clue-list" id="clue-list"></ul>
+
+        <div style="margin-top: 12px;">
+          <div class="clue-detail-title" id="clue-detail-title">Hinweis auswählen…</div>
+          <div class="clue-detail-text" id="clue-detail-text">
+            Klicke links auf einen Hinweis, um Details zu sehen.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="end-highlight" id="end-message" style="display:none;"></div>
+  </div>
+
+  <script>
+    // ----- Datenstruktur für Szenen -----
+
+    const scenes = {
+      labor: {
+        id: "labor",
+        title: "Ausgangslevel – Das Labor nach dem Mord",
+        intro:
+          "Du blickst in ein Biologielabor. In der Mitte des Raums liegt Doron Markovic, " +
+          "ein Forscher über den Ursprung des Lebens, in einer Pfütze aus Blut und " +
+          "verschütteter Nährlösung. Glasgeräte sind zersplittert, eine Schreibmaschine " +
+          "liegt umgestoßen am Boden, auf dem Labortisch steht ein Mikroskop mit einer " +
+          "vorbereiteten Probe. Durch das Fenster siehst du den Gang, wo zwei " +
+          "Wissenschaftlerinnen rauchen. Alles ist eingefroren in einem einzigen Moment – " +
+          "du kannst nichts verändern, nur betrachten.",
+        clues: [
+          {
+            id: 1,
+            title: "Die Leiche von Doron Markovic",
+            text:
+              "Markovic liegt rücklings auf dem Boden. Aufgerissene Augen, ein dunkler Fleck " +
+              "am Hinterkopf. Neben ihm ein Metallstativ mit scharfer Kante; es sieht so aus, " +
+              "als wäre er gefallen und mit dem Kopf aufgeschlagen. Auf dem Kittel steckt ein " +
+              "Namensschild: 'Dr. Doron Markovic – Abteilung Evolutionsbiologie'. In der " +
+              "Brusttasche findest du eine Karteikarte mit den Worten: 'Ursprung des Lebens – " +
+              "endgültige Daten heute Abend'."
+          },
+          {
+            id: 2,
+            title: "Mikroskop und Notizen",
+            text:
+              "Unter dem Mikroskop liegt ein Objektträger mit einer milchigen Flüssigkeit – " +
+              "offenbar eine Art Ursuppe-Experiment. Daneben ein Notizblock: Pfeile, Skizzen, " +
+              "Messwerte, dann ein Satz, der mit dicker Schrift eingerahmt ist: 'Falls ich " +
+              "recht habe, widerlegt das unser gemeinsames Modell.' Darunter stehen drei " +
+              "Initialen, durchgestrichen, als hätte Markovic sie aus Wut entfernt."
+          },
+          {
+            id: 3,
+            title: "Zerbrochene Schreibmaschine",
+            text:
+              "Die Schreibmaschine ist vom Tisch gestürzt. Ein angefangenes Dokument steckt " +
+              "noch drin. Du kannst Teile lesen: '...dass die Ergebnisse nicht reproduzierbar " +
+              "sind und dass die Daten offenbar manipuliert wurden. Ich sehe mich gezwungen, " +
+              "die Kommission zu informieren...' Der Name des Adressaten ist abgerissen. Die " +
+              "letzten Wörter brechen ab, als hätte jemand den Text in Panik unterbrochen."
+          },
+          {
+            id: 4,
+            title: "Der Wissenschaftler im Nebenlabor",
+            text:
+              "Durch eine Glasscheibe siehst du einen Mann im Nebenraum, eingefroren in der " +
+              "Bewegung. In seiner Kitteltasche stecken eine Dienstliste, ein Fachbuch über " +
+              "das Paläozoikum und ein dicker Umschlag mit Geld. Auf der Dienstliste ist seine " +
+              "Schicht für den aktuellen Abend eigentlich als 'frei' markiert. Jemand hat " +
+              "handschriftlich 'Vertretung für M.' daneben gekritzelt."
+          },
+          {
+            id: 5,
+            title: "Die zwei rauchenden Frauen im Gang",
+            text:
+              "Im Gang stehen zwei Wissenschaftlerinnen. Die eine gestikuliert aufgeregt und " +
+              "du kannst in einer eingeblendeten Sprechblase lesen: 'Wenn er das meldet, sind " +
+              "wir alle erledigt. Die Gelder sind schon weg.' Die andere antwortet: 'Beruhig " +
+              "dich. Ein Unfall passiert hier schneller, als du denkst.' In ihrer Handtasche " +
+              "steckt ein Brief aus der Bank: 'Letzte Mahnung – Konto überzogen.'"
+          },
+          {
+            id: 6,
+            title: "Zerbrochene Labortafel",
+            text:
+              "Am Boden liegen Scherben einer weißen Kunststofftafel. Du setzt die Stücke im " +
+              "Kopf zusammen: Pfeile von 'Falsifikation' zu 'Theorie A' und 'Theorie B', " +
+              "daneben in roter Schrift: 'Wer profitiert von der Lüge?' Jemand hat darunter " +
+              "ein Fragezeichen gemalt. Unter einem Stück erkennst du den Handschriftzug 'D.M.'."
+          }
+        ],
+        question:
+          "Versuche nun zu formulieren, was deiner Meinung nach in dieser Szene passiert ist. " +
+          "Wer oder was ist für den Tod von Doron Markovic verantwortlich, und warum?",
+        solutionKeywords: [
+          "kollege", "kollegen", "geld", "daten",
+          "manipuliert", "unfall", "mord"
+        ],
+        solutionText:
+          "Du rekonstruierst ungefähr folgenden Ablauf:
+
+" +
+          "Markovic hatte in seinen Experimenten Hinweise gefunden, dass die gemeinsame " +
+          "Theorie der Abteilung falsch war und dass Daten manipuliert wurden – vermutlich " +
+          "um Fördergelder zu rechtfertigen. Er wollte das melden und hatte bereits einen " +
+          "Brief vorbereitet. Ein oder mehrere Kollegen standen unter massivem finanziellen " +
+          "Druck und profitierten von der Fälschung der Daten.
+
+" +
+          "Es kam im Labor zu einer Auseinandersetzung. Dabei stürzte Markovic – ob durch Stoß " +
+          "oder im Gerangel – und schlug mit dem Hinterkopf auf. Für die Beteiligten war klar: " +
+          "Wenn der Vorfall als Unfall durchgeht, sind sie gerettet; wenn die Manipulationen " +
+          "auffliegen, verlieren sie alles. Also belassen sie es beim 'Unfall' und sichern " +
+          "Beweise für sich selbst ab.
+
+" +
+          "Im Sinne des Think-Backwards-Games hast du damit erkannt: Der Tod war Ergebnis eines " +
+          "Konflikts um manipulierte Daten und Geld – zwischen Markovic und seinen Kollegen.",
+        previousSceneId: "vorfall",
+        attempts: 0
+      },
+
+      vorfall: {
+        id: "vorfall",
+        title: "Frühere Szene – Die Auseinandersetzung im Labor",
+        intro:
+          "Du springst ein Stück in die Vergangenheit. Das Labor ist fast dasselbe, doch " +
+          "Markovic steht noch. Die Atmosphäre ist geladen. Zwei Kolleginnen und der " +
+          "Wissenschaftler aus dem Nebenraum sind anwesend. Du hörst keine Stimmen, sie sind " +
+          "nur als Untertitel eingeblendet, während du die eingefrorene Szene betrachtest.",
+        clues: [
+          {
+            id: 1,
+            title: "Untertitel über Markovic",
+            text:
+              "Ein eingeblendeter Untertitel zeigt Markovics Worte: 'Ich habe die Rohdaten " +
+              "gesichert. Wenn ihr mich unter Druck setzt, gehe ich morgen direkt zur " +
+              "Kommission. Das ist größer als unsere Karrieren.'"
+          },
+          {
+            id: 2,
+            title: "Untertitel über Kollegin A",
+            text:
+              "Kollegin A steht mit verschränkten Armen vor ihm. Untertitel: 'Doron, du " +
+              "verstehst nicht, was das bedeutet. Die Drittmittel sind längst verplant. Wenn " +
+              "das rauskommt, ist das ganze Institut erledigt. Wir haben Familien.'"
+          },
+          {
+            id: 3,
+            title: "Untertitel über Kollegin B",
+            text:
+              "Kollegin B wirkt nervös, nestelt an ihrer Tasche. Untertitel: 'Nur ein paar " +
+              "Zahlen glätten, damit das Modell passt – das tun alle. Du musst deswegen " +
+              "niemanden ruinieren. Es war auch deine Theorie.'"
+          },
+          {
+            id: 4,
+            title: "Der Wissenschaftler mit dem Umschlag",
+            text:
+              "Der Mann aus dem Nebenlabor steht einen Schritt abseits. Sein Untertitel: 'Wenn " +
+              "er zur Kommission geht, ist die Kooperation mit dem Konzern tot. Die zahlen " +
+              "nicht für Experimente, die nichts bringen. Dann ist das ganze Projekt hinüber.' " +
+              "Seine Hand liegt fest auf Markovics Arm."
+          },
+          {
+            id: 5,
+            title: "Der verhängnisvolle Moment",
+            text:
+              "Direkt hinter Markovic steht das Metallstativ, das du im Ausgangslevel gesehen " +
+              "hast. Die Szene ist exakt im Moment eingefroren, bevor etwas passiert: Der " +
+              "Wissenschaftler aus dem Nebenraum macht einen Schritt nach vorn, seine Hand " +
+              "schiebt Markovic leicht zurück. Markovics Ferse steht bereits halb in der Luft. " +
+              "In einem eingeblendeten Tooltip steht: 'Ein kleiner Schubser – oder nur ein " +
+              "unglücklicher Schritt?'"
+          }
+        ],
+        question:
+          "Nun kennst du den Streit, der dem Tod vorausging. Wie würdest du den Hergang " +
+          "zusammenfassen? Was war es eher: Unfall, unbedachter Stoß oder kalkulierter Mord? " +
+          "Begründe deine Entscheidung.",
+        solutionKeywords: ["unfall", "stoß", "druck", "geld", "daten"],
+        solutionText:
+          "Du ordnest die Szene ein als einen eskalierenden Streit unter massivem Druck: " +
+          "Fördergelder, Karriereängste und manipulierte Daten. Der stoßende Kollege wusste, " +
+          "wie gefährlich die Konfrontation war, aber im Moment der Eskalation verschwimmt die " +
+          "Grenze zwischen 'Unfall' und 'vorsätzlichem Stoß'.
+
+" +
+          "Im Rahmen des Spiels gilt: Es war offiziell ein Unfall, real aber die Folge eines " +
+          "aggressiven Stoßes unter bewusster Inkaufnahme des Risikos. Ein klassischer Fall, in " +
+          "dem das Bedürfnis nach einer klaren Ursache an die Grenzen stößt – ganz im Sinne von " +
+          "Capricorns Thema: Kausalität ist nie so eindeutig, wie wir sie gerne hätten.",
+        previousSceneId: null,
+        attempts: 0
+      }
+    };
+
+    let currentSceneId = "labor";
+
+    // ----- UI-Referenzen -----
+
+    const sceneTitleEl = document.getElementById("scene-title");
+    const sceneIntroEl = document.getElementById("scene-intro");
+    const sceneQuestionEl = document.getElementById("scene-question");
+    const clueListEl = document.getElementById("clue-list");
+    const clueDetailTitleEl = document.getElementById("clue-detail-title");
+    const clueDetailTextEl = document.getElementById("clue-detail-text");
+    const answerInputEl = document.getElementById("answer-input");
+    const attemptsBadgeEl = document.getElementById("attempts-badge");
+    const logEl = document.getElementById("log");
+    const endMessageEl = document.getElementById("end-message");
+
+    const checkAnswerBtn = document.getElementById("check-answer-btn");
+    const helpBtn = document.getElementById("help-btn");
+
+    // ----- Hilfsfunktionen -----
+
+    function addLog(message) {
+      const entry = document.createElement("div");
+      entry.className = "log-entry";
+      entry.textContent = message;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function renderScene() {
+      const scene = scenes[currentSceneId];
+      if (!scene) return;
+
+      sceneTitleEl.textContent = scene.title;
+      sceneIntroEl.textContent = scene.intro;
+      sceneQuestionEl.textContent = scene.question;
+      answerInputEl.value = "";
+      logEl.innerHTML = "";
+      endMessageEl.style.display = "none";
+      attemptsBadgeEl.textContent = `Versuche: ${scene.attempts || 0}`;
+      clueDetailTitleEl.textContent = "Hinweis auswählen…";
+      clueDetailTextEl.textContent = "Klicke links auf einen Hinweis, um Details zu sehen.";
+
+      // Liste der Hinweise
+      clueListEl.innerHTML = "";
+      scene.clues.forEach((clue) => {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.className = "clue-button";
+        btn.textContent = `[${clue.id}] ${clue.title}`;
+        btn.addEventListener("click", () => showClue(clue.id));
+        li.appendChild(btn);
+        clueListEl.appendChild(li);
+      });
+
+      addLog("Neue Szene geladen. Lies die Hinweise und versuche, die Situation rückwärts zu erklären.");
+    }
+
+    function showClue(clueId) {
+      const scene = scenes[currentSceneId];
+      if (!scene) return;
+      const clue = scene.clues.find((c) => c.id === clueId);
+      if (!clue) return;
+      clueDetailTitleEl.textContent = `[${clue.id}] ${clue.title}`;
+      clueDetailTextEl.textContent = clue.text;
+      addLog(`Hinweis ${clue.id} betrachtet: ${clue.title}`);
+    }
+
+    function checkSolution() {
+      const scene = scenes[currentSceneId];
+      if (!scene) return;
+
+      let answer = answerInputEl.value.trim();
+      if (!answer) {
+        addLog("Du sagst nichts. Die Szene bleibt stumm.");
+        return;
+      }
+
+      scene.attempts = (scene.attempts || 0) + 1;
+      attemptsBadgeEl.textContent = `Versuche: ${scene.attempts}`;
+
+      const answerLower = answer.toLowerCase();
+      const missing = scene.solutionKeywords.filter(
+        (kw) => !answerLower.includes(kw)
+      );
+
+      if (missing.length === 0) {
+        addLog("Deine Erklärung ist für Capricorn plausibel genug.");
+        showSceneSolution(scene, true);
+      } else {
+        addLog("Capricorn akzeptiert deine Erklärung noch nicht ganz.");
+        if (scene.attempts < 3) {
+          const unique = [...new Set(missing)];
+          const hint = document.createElement("div");
+          hint.className = "keyword-hint";
+          hint.textContent =
+            "Dir fehlen noch Aspekte wie: " + unique.join(", ") + ".";
+          logEl.appendChild(hint);
+          logEl.scrollTop = logEl.scrollHeight;
+        } else {
+          addLog("Du hast es mehrmals versucht. Das Spiel zeigt dir seine eigene, willkürliche Erklärung.");
+          showSceneSolution(scene, false);
+        }
+      }
+    }
+
+    function showSceneSolution(scene, isFromSuccess) {
+      endMessageEl.style.display = "block";
+      endMessageEl.textContent = "";
+      const intro = document.createElement("div");
+      intro.textContent = isFromSuccess
+        ? "Rekonstruktion dieser Szene:"
+        : "Vorgeschlagene Lösung dieser Szene:";
+      endMessageEl.appendChild(intro);
+
+      const body = document.createElement("div");
+      body.style.marginTop = "6px";
+      body.textContent = scene.solutionText;
+      endMessageEl.appendChild(body);
+
+      if (scene.previousSceneId) {
+        const btn = document.createElement("button");
+        btn.className = "btn primary";
+        btn.style.marginTop = "10px";
+        btn.textContent = "Weiter in die Vergangenheit springen";
+        btn.addEventListener("click", () => {
+          currentSceneId = scene.previousSceneId;
+          scenes[currentSceneId].attempts = scenes[currentSceneId].attempts || 0;
+          renderScene();
+        });
+        endMessageEl.appendChild(btn);
+      } else {
+        const endNote = document.createElement("div");
+        endNote.style.marginTop = "10px";
+        endNote.textContent =
+          "Du hast die früheste Szene dieses kleinen Prototyps erreicht. " +
+          "In einem vollständigen Capricorn gäbe es nun weitere Sprünge, " +
+          "alternative Erklärungen und noch mehr Zweifel an der Kausalität.";
+        endMessageEl.appendChild(endNote);
+      }
+    }
+
+    function showHelp() {
+      const msg =
+        "So spielst du den Prototyp von Capricorn:
+
+" +
+        "1. Lies die Szenenbeschreibung links.
+" +
+        "2. Klicke rechts auf die Hinweise, um Details zu sehen.
+" +
+        "3. Formuliere deine Erklärung im Textfeld – was ist hier passiert, wer ist verantwortlich, warum?
+" +
+        "4. Klicke auf 'Lösung prüfen'.
+
+" +
+        "Capricorn prüft nicht, ob du die absolute Wahrheit gefunden hast, " +
+        "sondern ob deine Erklärung bestimmte Schlüsselideen enthält. " +
+        "Wenn du nah genug dran bist, springst du eine Ebene weiter zurück in die Vergangenheit.";
+      alert(msg);
+    }
+
+    // ----- Event-Listener -----
+
+    checkAnswerBtn.addEventListener("click", checkSolution);
+    helpBtn.addEventListener("click", showHelp);
+
+    // Ctrl+Enter prüft ebenfalls die Lösung
+    answerInputEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        checkSolution();
+      }
+    });
+
+    // ----- initialer Start -----
+    renderScene();
+  </script>
+</body>
+</html>
